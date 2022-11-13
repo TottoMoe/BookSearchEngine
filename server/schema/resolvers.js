@@ -1,20 +1,19 @@
-const { User } = require("../models");
+const { User, Book } = require("../models");
 // import sign token function from auth
+const { AuthenticationError } = require('apollo-server-express');
 const { signToken } = require("../utils/auth");
+const { countDocuments } = require("../models/User");
 
 module.exports = {
   // get a single user by either their id or their username
   Query: {
-    getSingleUser: async (parent, args, context) => {
-      const foundUser = await User.findOne({
-        username: args.username,
-      });
-
-      if (!foundUser) {
-        return console.error("Cannot find a user with this id!");
+    me: async (parent, args, context) => {
+      if (context.user) {
+        const foundUser = await User.findOne({ _id: context.user._id })
+        .select('-__v -password');
+        return foundUser;
       }
-
-      return foundUser;
+      throw new AuthenticationError("You need to be logged in!");
     },
   },
 
@@ -30,15 +29,13 @@ module.exports = {
     },
     // login a user, sign a token, and send it back (to client/src/components/LoginForm.js)
     // {body} is destructured req.body
-    login: async (parent, args, context) => {
-      const user = await User.findOne({
-        $or: [{ username: args.username }, { email: args.email }],
-      });
+    login: async (parent, { email, password }) => {
+      const user = await User.findOne({ email });
       if (!user) {
-        return console.error("Can't find this user");
+        throw new AuthenticationError ("Can't find this user");
       }
 
-      const correctPw = await user.isCorrectPassword(args.password);
+      const correctPw = await user.isCorrectPassword(password);
 
       if (!correctPw) {
         return console.error("Wrong password!");
@@ -48,30 +45,28 @@ module.exports = {
     },
     // save a book to a user's `savedBooks` field by adding it to the set (to prevent duplicates)
     // user comes from `req.user` created in the auth middleware function
-    saveBook: async (parent, args, context) => {
-      try {
-        const updatedUser = await User.findOneAndUpdate(
+    saveBook: async (parent, { book }, context) => {
+      if (context.user) {
+        return User.findOneAndUpdate(
           { _id: context.user._id },
-          { $addToSet: { savedBooks: args } },
-          { new: true, runValidators: true }
-        );
-        return updatedUser;
-      } catch (err) {
-        console.log(err);
-        return err;
+          { $addToSet: { savedBooks: book } },
+          { new: true }
+        )
       }
+       throw new AuthenticationError('Your need to be logged in!')
     },
     // remove a book from `savedBooks`
-    deleteBook: async (parent, args, context) => {
-      const updatedUser = await User.findOneAndUpdate(
-        { _id: context.user._id },
-        { $pull: { savedBooks: { bookId: args.bookId } } },
-        { new: true }
-      );
-      if (!updatedUser) {
-        return console.error("Couldn't find user with this id!");
+    deleteBook: async (parent, { bookId }, context) => {
+      if (context.user) {
+        return User.findOneAndUpdate(
+          { _id: context.user._id },
+          { $pull: { savedBooks: { bookId: bookId } } },
+          { new: true }
+        );
       }
-      return updatedUser;
+      throw new AuthenticationError('Your need to be logged in!')
     },
   },
 };
+
+module.exports = resolvers;
