@@ -18,7 +18,7 @@ module.exports = {
   },
 
   Mutation: {
-    createUser: async (parent, args, context) => {
+    addUser: async (parent, args, context) => {
       const user = await User.create(args);
 
       if (!user) {
@@ -56,7 +56,7 @@ module.exports = {
        throw new AuthenticationError('Your need to be logged in!')
     },
     // remove a book from `savedBooks`
-    deleteBook: async (parent, { bookId }, context) => {
+    removeBook: async (parent, { bookId }, context) => {
       if (context.user) {
         return User.findOneAndUpdate(
           { _id: context.user._id },
