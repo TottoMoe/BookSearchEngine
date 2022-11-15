@@ -30,16 +30,9 @@ const SavedBooks = () => {
     try {
       await deleteBook({
         variables: {bookId: bookId},
-        update: cache => {
-          const data = cache.readQuery({ query: GET_ME });
-          const userDataCache = data.me;
-          const savedBookCache = userDataCache.savedBooks;
-          const updatedBookCache = savedBookCache.filter((book) => book.bookId !== bookId);
-          data.me.savedBooks = updatedBookCache;
-          cache.writeQuery({ query: GET_ME, data: {data: {...data.me.savedBooks}}})
-        }
       });
       removeBookId(bookId);
+      window.location.reload();
     } catch (err) {
       console.error(err);
     };
