@@ -4,7 +4,7 @@ const { AuthenticationError } = require('apollo-server-express');
 const { signToken } = require("../utils/auth");
 const { countDocuments } = require("../models/User");
 
-module.exports = {
+const resolvers = {
   // get a single user by either their id or their username
   Query: {
     me: async (parent, args, context) => {
