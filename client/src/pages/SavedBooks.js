@@ -32,7 +32,7 @@ const SavedBooks = () => {
         variables: {bookId: bookId},
       });
       removeBookId(bookId);
-      window.location.reload();
+      // window.location.reload();
     } catch (err) {
       console.error(err);
     };
